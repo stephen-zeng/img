@@ -48,4 +48,5 @@ jobs:
             --access-key-secret=$ACCESS_KEY_SECRET \
             --endpoint=oss-cn-wuhan-lr.aliyuncs.com \
             --update \
-            --delete 
+            --delete \
+            --force
