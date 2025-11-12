@@ -1,0 +1,51 @@
+name: Sync to Aliyun OSS
+
+on:
+  push:
+    branches:
+      - sync  # 仅在推送到 main 分支时触发
+
+jobs:
+  sync-to-oss:
+    runs-on: ubuntu-latest
+    steps:
+      # 步骤1: 检出您的仓库代码
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 步骤2: 下载、解压并安装指定版本的 ossutil
+      - name: Install specific ossutil version
+        run: |
+          # 下载您指定的 zip 压缩包
+          curl -L "https://gosspublic.alicdn.com/ossutil/1.7.19/ossutil-v1.7.19-linux-amd64.zip" -o ossutil.zip
+          
+          # 解压文件
+          unzip ossutil.zip
+          
+          # 从解压出的文件夹中将可执行文件移动到系统路径下，并重命名为 ossutil
+          # 注意：文件夹名称需要和压缩包内的实际名称匹配
+          mv ossutil-v1.7.19-linux-amd64/ossutil64 /usr/local/bin/ossutil
+          
+          # 赋予执行权限
+          chmod +x /usr/local/bin/ossutil
+          
+          # (可选) 清理下载的压缩包
+          rm ossutil.zip
+          rm -rf .github
+          rm -rf .git
+
+      # 步骤3: 使用 sync --update --delete 执行增量同步
+      - name: Sync incrementally to OSS (with delete)
+        env:
+          # 从 GitHub Secrets 中读取阿里云凭证
+          ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY_ID }}
+          ACCESS_KEY_SECRET: ${{ secrets.ACCESS_KEY_SECRET }}
+        run: |
+          # 使用 sync 命令并配合 --update 和 --delete 参数
+          # 这将实现本地与 OSS 之间完美的镜像同步
+          ossutil sync ./ oss://img535a/img/ \
+            --access-key-id=$ACCESS_KEY_ID \
+            --access-key-secret=$ACCESS_KEY_SECRET \
+            --endpoint=oss-cn-wuhan-lr.aliyuncs.com \
+            --update \
+            --delete 
